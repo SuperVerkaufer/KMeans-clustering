@@ -1,0 +1,148 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load in 
+
+#import the libraries
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import matplotlib.pyplot as plt #Data Visualization 
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns  #Python library for Vidualization
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+from sklearn.model_selection import train_test_split
+
+
+# Input data files are available in the "../input/" directory.
+# For example, running this (by clicking run or pressing Shift+Enter) will list the files in the input directory
+
+import os
+print(os.listdir("../input"))
+
+# Any results you write to the current directory are saved as output.
+
+#Import the dataset
+
+data = pd.read_csv('../input/Mall_Customers.csv')
+
+#Exploratory Data Analysis
+#As this is unsupervised learning so Label (Output Column) is unknown
+
+data.head(10) #Printing first 10 rows of the dataset
+#total rows and colums in the dataset
+data.shape
+#not necessary
+
+del data['Gender']
+del data['CustomerID']
+data.info() # there are no missing values as all the columns has 200 entries properly
+#Missing values computation
+data.isnull().sum()
+data.head()
+
+#EDA-1
+data.describe()
+data.head()
+
+#EDA-2 Create the scatterplot
+plt.scatter(data['Age'], data['Annual Income (k$)'])
+
+# Add title and labels
+plt.title('Age vs Income')
+plt.xlabel('Age')
+plt.ylabel('AI (k$)')
+
+# Display the plot - not necessary
+plt.show()
+
+X_train, X_test = train_test_split(data, test_size=0.2, random_state=42)
+X_train.shape
+
+#Run K means Clustering version 4 (Pandas DF)
+
+# Create a sample DataFrame
+#data = {'Feature1': [1, 2, 3, 4, 5, 6, 7, 8, 9], 'Feature2': [2, 3, 5, 7, 11, 13, 17, 19, 23]}
+#df = pd.DataFrame(data)
+features = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+
+#features = ['Age','Spending Score (1-100)']
+df_features = X_train[features]
+
+# Perform K-means clustering
+kmeans = KMeans(n_clusters=6)
+
+#kmeans.fit(df)
+kmeans.fit(df_features)
+
+
+# Predict cluster labels
+labels = kmeans.labels_
+
+# Add cluster labels to the DataFrame
+df_features['Cluster'] = labels
+
+#print(df)
+df_features.tail(10)
+
+#Cluster0 = df_features[df_features['Cluster'] == 0]
+#Cluster0.tail(10)
+
+
+#Next Steps. 
+#Run 3D scatterplot - DONE 
+# Create a 3D scatterplot
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(df_features['Age'], df_features['Spending Score (1-100)'], df_features['Annual Income (k$)'], c=labels)
+
+# Plot cluster centers
+ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], kmeans.cluster_centers_[:, 2], c='red', marker='*', s=200)
+
+# Set plot labels and title
+ax.set_xlabel('Age')
+ax.set_ylabel('Spending Score (1-100)')
+ax.set_zlabel('Annual Income (k$)')
+ax.set_title('KMeans Clustering in 3D')
+
+# Show the plot
+plt.show()
+
+#Building the Model
+#KMeans Algorithm to decide the optimum cluster number , KMeans++ using Elbow Mmethod
+#to figure out K for KMeans, I will use ELBOW Method on KMEANS++ Calculation
+#from sklearn.cluster import KMeans
+wcss=[]
+
+#we always assume the max number of cluster would be 10
+#you can judge the number of clusters by doing averaging
+###Static code to get max no of clusters
+
+for i in range(1,11):
+    kmeans = KMeans(n_clusters= i, init='k-means++', random_state=0)
+    kmeans.fit(df_features)
+    wcss.append(kmeans.inertia_)
+
+    #inertia_ is the formula used to segregate the data points into clusters
+#Visualizing the ELBOW method to get the optimal value of K 
+plt.plot(range(1,11), wcss)
+plt.title('The Elbow Method')
+plt.xlabel('no of clusters')
+plt.ylabel('wcss')
+plt.show()
+
+X_test.info() # there are no missing values as all the columns has 200 entries properly
+X_test.shape
+#Missing values computation
+X_test.isnull().sum()
+#df_features.head()
+
+features1 = ['Age', 'Annual Income (k$)', 'Spending Score (1-100)']
+df_features1 = X_test[features1]
+
+# Perform K-means clustering
+kmeans1 = KMeans(n_clusters=6)
+
+#kmeans.fit(df)
+kmeans1.fit(df_features1)
+predicted_clusters1 = kmeans1.predict(X_test)
+print(predicted_clusters1)
